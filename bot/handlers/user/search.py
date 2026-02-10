@@ -80,7 +80,7 @@ async def handle_search_text(
         protocol_repo: Protocol repository (injected by middleware).
         user_repo: User repository (injected by middleware).
     """
-    from bot.keyboards import get_main_keyboard
+    from bot.keyboards import build_main_inline_keyboard
     from bot.utils.protocol import send_protocol_list
     
     user_id = message.from_user.id
@@ -95,7 +95,7 @@ async def handle_search_text(
         await message.answer(get_text(lang, "ask_search_text"))
         await message.answer(
             "Выберите действие:" if lang == "ru" else "Amalni tanlang:",
-            reply_markup=get_main_keyboard(lang),
+            reply_markup=build_main_inline_keyboard(lang),
         )
         return
     
@@ -126,7 +126,7 @@ async def handle_search_text(
     # Show main menu
     await message.answer(
         "Выберите действие:" if lang == "ru" else "Amalni tanlang:",
-        reply_markup=get_main_keyboard(lang),
+        reply_markup=build_main_inline_keyboard(lang),
     )
 
 

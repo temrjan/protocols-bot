@@ -140,7 +140,7 @@ async def handle_admin_moderator_id(
         user_repo: User repository (injected by middleware).
     """
     from bot.core import settings
-    from bot.keyboards import get_main_keyboard
+    from bot.keyboards import build_main_inline_keyboard
 
     user_id = message.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
@@ -169,7 +169,7 @@ async def handle_admin_moderator_id(
         await state.clear()
         await message.answer(
             "Выберите действие:" if lang == "ru" else "Amalni tanlang:",
-            reply_markup=get_main_keyboard(lang),
+            reply_markup=build_main_inline_keyboard(lang),
         )
         return
 
@@ -183,7 +183,7 @@ async def handle_admin_moderator_id(
     await state.clear()
     await message.answer(
         "Выберите действие:" if lang == "ru" else "Amalni tanlang:",
-        reply_markup=get_main_keyboard(lang),
+        reply_markup=build_main_inline_keyboard(lang),
     )
 
 

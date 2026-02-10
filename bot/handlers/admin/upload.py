@@ -495,7 +495,7 @@ async def handle_upload_protocol_no(
         user_repo: User repository (injected by middleware).
         storage_service: Storage service (injected by middleware).
     """
-    from bot.keyboards import build_download_keyboard, get_main_keyboard
+    from bot.keyboards import build_download_keyboard, build_main_inline_keyboard
     from bot.utils.protocol import format_protocol_text
 
     user_id = message.from_user.id
@@ -602,7 +602,7 @@ async def handle_upload_protocol_no(
         await state.clear()
         await message.answer(
             "Выберите действие:" if lang == "ru" else "Amalni tanlang:",
-            reply_markup=get_main_keyboard(lang),
+            reply_markup=build_main_inline_keyboard(lang),
         )
 
 

@@ -170,7 +170,7 @@ async def handle_product_selection(
         protocol_repo: Protocol repository (injected by middleware).
         user_repo: User repository (injected by middleware).
     """
-    from bot.keyboards import get_main_keyboard
+    from bot.keyboards import build_main_inline_keyboard
     from bot.utils.protocol import send_protocol_list
     
     user_id = callback.from_user.id
@@ -204,7 +204,7 @@ async def handle_product_selection(
     # Show main menu
     await callback.message.answer(
         "Выберите действие:" if lang == "ru" else "Amalni tanlang:",
-        reply_markup=get_main_keyboard(lang),
+        reply_markup=build_main_inline_keyboard(lang),
     )
     await callback.answer()
 

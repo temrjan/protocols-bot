@@ -125,5 +125,40 @@ __all__ = [
     "build_document_type_keyboard",
     "build_download_keyboard",
     "build_product_keyboard",
+    "build_main_inline_keyboard",
     "build_year_keyboard",
+    "MAIN_MENU_BUTTONS",
 ]
+
+
+# Reply keyboard button texts (for fallback matching)
+MAIN_MENU_BUTTONS = {
+    "ru": {
+        "filters": "🔍 Найти по фильтрам",
+        "search": "🔎 Поиск по номеру",
+        "docs": "📋 Дополнительные документы",
+    },
+    "uz": {
+        "filters": "🔍 Filtr bo'yicha qidirish",
+        "search": "🔎 Raqam bo'yicha qidirish",
+        "docs": "📋 Qo'shimcha hujjatlar",
+    },
+}
+
+
+def build_main_inline_keyboard(lang: str) -> InlineKeyboardMarkup:
+    """Build the main menu as an inline keyboard.
+
+    Args:
+        lang: Language code ('ru' or 'uz').
+
+    Returns:
+        InlineKeyboardMarkup with main menu options.
+    """
+    texts = MAIN_MENU_BUTTONS.get(lang, MAIN_MENU_BUTTONS["ru"])
+    builder = InlineKeyboardBuilder()
+    builder.button(text=texts["filters"], callback_data="menu:filters")
+    builder.button(text=texts["search"], callback_data="menu:search")
+    builder.button(text=texts["docs"], callback_data="menu:documents")
+    builder.adjust(1)
+    return builder.as_markup()
