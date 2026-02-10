@@ -1,0 +1,109 @@
+"""Test all imports work correctly."""
+
+
+def test_core_imports() -> None:
+    """Test core module imports.
+
+    Verifies that all core components can be imported:
+    - settings: Configuration object
+    - bot: Bot instance
+    - dp: Dispatcher instance
+    - setup_logging: Logging configuration function
+    """
+    from bot.core import settings, bot, dp, setup_logging
+    print("✅ Core imports OK")
+
+
+def test_database_imports() -> None:
+    """Test database imports.
+
+    Verifies that database components can be imported:
+    - Database: Main database class
+    - Models: Protocol, Moderator, User, Document
+    - Repositories: All repository classes
+    """
+    from bot.database import Database
+    from bot.database.models import Protocol, Moderator, User, Document
+    from bot.database.repositories import (
+        ProtocolRepository,
+        ModeratorRepository,
+        UserRepository,
+        DocumentRepository,
+    )
+    print("✅ Database imports OK")
+
+
+def test_handler_imports() -> None:
+    """Test handler imports.
+
+    Verifies that all handler modules can be imported:
+    - common: Start, cancel, language handlers
+    - download: Protocol download handlers
+    - user: User-facing handlers
+    - admin: Admin panel handlers
+    """
+    from bot.handlers import common, download, user, admin
+    print("✅ Handler imports OK")
+
+
+def test_middleware_imports() -> None:
+    """Test middleware imports.
+
+    Verifies that all middlewares can be imported:
+    - DatabaseMiddleware: Repository injection
+    - ThrottlingMiddleware: Rate limiting
+    - LoggingMiddleware: Request logging
+    """
+    from bot.middlewares import (
+        DatabaseMiddleware,
+        ThrottlingMiddleware,
+        LoggingMiddleware,
+    )
+    print("✅ Middleware imports OK")
+
+
+def test_service_imports() -> None:
+    """Test service imports.
+
+    Verifies that all service classes can be imported:
+    - StorageService: File storage management
+    - ProtocolService: Protocol business logic
+    """
+    from bot.services import StorageService, ProtocolService
+    print("✅ Service imports OK")
+
+
+def test_filter_imports() -> None:
+    """Test filter imports.
+
+    Verifies that custom filters can be imported:
+    - IsAdmin: Admin user filter
+    - IsModerator: Moderator user filter
+    """
+    from bot.filters import IsAdmin, IsModerator
+    print("✅ Filter imports OK")
+
+
+def test_utils_imports() -> None:
+    """Test utilities imports.
+
+    Verifies that utility functions can be imported:
+    - General utilities: slugify, protocol_storage_key, format_size
+    - Protocol utilities: format_protocol_text, send_protocol_list
+    - Document utilities: format_document_text, send_document_list
+    """
+    from bot.utils import slugify, protocol_storage_key, format_size
+    from bot.utils.protocol import format_protocol_text, send_protocol_list
+    from bot.utils.document import format_document_text, send_document_list
+    print("✅ Utils imports OK")
+
+
+if __name__ == "__main__":
+    test_core_imports()
+    test_database_imports()
+    test_handler_imports()
+    test_middleware_imports()
+    test_service_imports()
+    test_filter_imports()
+    test_utils_imports()
+    print("\n🎉 All imports successful!")
