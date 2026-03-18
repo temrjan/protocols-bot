@@ -8,7 +8,6 @@ This module contains handlers for protocol download:
 import asyncio
 
 from aiogram import F, Router
-from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, FSInputFile
 from loguru import logger
 
@@ -102,9 +101,13 @@ async def handle_download(
         # Try to use cached Telegram file ID
         if protocol.tg_file_id:
             if protocol.mime.startswith("image/"):
-                await callback.message.answer_photo(protocol.tg_file_id, caption=caption)
+                await callback.message.answer_photo(
+                    protocol.tg_file_id, caption=caption
+                )
             else:
-                await callback.message.answer_document(protocol.tg_file_id, caption=caption)
+                await callback.message.answer_document(
+                    protocol.tg_file_id, caption=caption
+                )
             return
 
         # Fetch from local storage

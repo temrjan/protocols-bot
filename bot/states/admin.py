@@ -17,7 +17,7 @@ class AdminStates(StatesGroup):
     """
 
     waiting_moderator_id = State()
-    
+
     # Document upload states
     waiting_doc_category = State()
     waiting_doc_file = State()

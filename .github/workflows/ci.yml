@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff pytest
+
+      - name: Lint with ruff
+        run: ruff check bot/
+
+      - name: Format check with ruff
+        run: ruff format --check bot/
+
+      - name: Test with pytest
+        env:
+          BOT_TOKEN: "0000000000:AAFakeTokenForCITestingOnly1234567"
+          DB_PATH: ":memory:"
+          STORAGE_ROOT: /tmp/protocols-test
+          ADMINS: "123456789"
+        run: pytest tests/ -v --no-header

@@ -31,11 +31,11 @@ TEXT = {
 
 def get_text(lang: str, key: str) -> str:
     """Get localized text.
-    
+
     Args:
         lang: Language code ('ru' or 'uz').
         key: Text key.
-    
+
     Returns:
         Localized text string.
     """
@@ -51,7 +51,7 @@ async def handle_search_menu(
     user_repo,
 ) -> None:
     """Handle search menu callback - prompt for search text.
-    
+
     Args:
         callback: Callback query.
         state: FSM state context.
@@ -59,7 +59,7 @@ async def handle_search_menu(
     """
     user_id = callback.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
-    
+
     await state.set_state(SearchState.waiting_text)
     await callback.message.answer(get_text(lang, "ask_search_text"))
     await callback.answer()
@@ -73,7 +73,7 @@ async def handle_search_text(
     user_repo,
 ) -> None:
     """Handle search text input - process search and show results.
-    
+
     Args:
         message: Incoming message.
         state: FSM state context.
@@ -82,15 +82,15 @@ async def handle_search_text(
     """
     from bot.keyboards import build_main_inline_keyboard
     from bot.utils.protocol import send_protocol_list
-    
+
     user_id = message.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
-    
+
     raw_query = message.text or ""
     query = raw_query.strip()
-    
+
     await state.clear()
-    
+
     if not query:
         await message.answer(get_text(lang, "ask_search_text"))
         await message.answer(
@@ -98,7 +98,7 @@ async def handle_search_text(
             reply_markup=build_main_inline_keyboard(lang),
         )
         return
-    
+
     # Try to parse "YYYY <protocol>" format
     protocols = []
     year_match = re.match(r"^(\d{4})\s+(.+)$", query)
@@ -112,17 +112,17 @@ async def handle_search_text(
             protocols = await protocol_repo.find_by_year_and_protocol(
                 year_value, protocol_fragment
             )
-    
+
     # If not found, try general code search
     if not protocols:
         protocols = await protocol_repo.find_by_code(query)
-    
+
     # Send results
     if not protocols:
         await message.answer(get_text(lang, "search_no_results"))
     else:
         await send_protocol_list(message, protocols, lang)
-    
+
     # Show main menu
     await message.answer(
         "Выберите действие:" if lang == "ru" else "Amalni tanlang:",

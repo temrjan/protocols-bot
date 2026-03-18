@@ -107,7 +107,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS documents (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               category TEXT NOT NULL,
-              
+
               filename TEXT NOT NULL,
               storage_key TEXT NOT NULL,
               size_bytes INTEGER,

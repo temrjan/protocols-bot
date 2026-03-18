@@ -8,13 +8,15 @@ This module contains handlers for:
 - Reply keyboard text fallback (for users with old reply keyboards)
 """
 
+import contextlib
+
 from aiogram import F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.keyboards import build_main_inline_keyboard, MAIN_MENU_BUTTONS
+from bot.keyboards import MAIN_MENU_BUTTONS, build_main_inline_keyboard
 
 router = Router(name="common")
 
@@ -147,10 +149,8 @@ async def handle_language(
     await state.update_data(lang=lang)
 
     # Remove inline keyboard
-    try:
+    with contextlib.suppress(Exception):
         await callback.message.edit_reply_markup()
-    except Exception:
-        pass
 
     await callback.answer()
     await state.clear()
@@ -233,9 +233,7 @@ async def handle_reply_keyboard_fallback(
         categories = await document_repo.get_categories()
         if not categories:
             await message.answer(
-                "Документы не найдены."
-                if lang == "ru"
-                else "Hujjatlar topilmadi.",
+                "Документы не найдены." if lang == "ru" else "Hujjatlar topilmadi.",
             )
             await message.answer(
                 get_text(lang, "choose_action"),

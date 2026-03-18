@@ -9,14 +9,14 @@ This module contains handlers for protocol file upload workflow:
 """
 
 import asyncio
+import contextlib
 import io
 from datetime import datetime
 from pathlib import Path
 
 from aiogram import F, Router
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, FSInputFile, InlineKeyboardMarkup, Message
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from loguru import logger
 
@@ -136,7 +136,9 @@ def build_year_keyboard() -> InlineKeyboardMarkup:
     current_year = datetime.now().year
     builder.button(text=str(current_year), callback_data=f"upload_year:{current_year}")
     previous_year = current_year - 1
-    builder.button(text=str(previous_year), callback_data=f"upload_year:{previous_year}")
+    builder.button(
+        text=str(previous_year), callback_data=f"upload_year:{previous_year}"
+    )
     builder.adjust(2)
     return builder.as_markup()
 
@@ -355,10 +357,8 @@ async def handle_upload_year_callback(
         await callback.answer("Invalid year", show_alert=True)
         return
 
-    try:
+    with contextlib.suppress(Exception):
         await callback.message.edit_reply_markup()
-    except Exception:
-        pass
 
     await callback.answer()
     await proceed_after_year(callback.message, state, lang, year)
@@ -402,7 +402,9 @@ async def handle_upload_product_prompt(
     )
 
 
-@router.callback_query(UploadStates.choosing_product, F.data.startswith("upload_product:"))
+@router.callback_query(
+    UploadStates.choosing_product, F.data.startswith("upload_product:")
+)
 async def handle_upload_product_callback(
     callback: CallbackQuery,
     state: FSMContext,
@@ -443,10 +445,8 @@ async def handle_upload_product_callback(
     await state.update_data(product=product)
     await state.set_state(UploadStates.waiting_protocol_no)
 
-    try:
+    with contextlib.suppress(Exception):
         await callback.message.edit_reply_markup()
-    except Exception:
-        pass
 
     await callback.answer()
     await callback.message.answer(get_text(lang, "admin_ask_protocol_no"))
@@ -525,7 +525,7 @@ async def handle_upload_protocol_no(
         payload = buffer.getvalue()
 
         # Validate file
-        mime = str(data.get("mime") or "").lower()
+        str(data.get("mime") or "").lower()
         filename_raw = str(data.get("filename") or "")
         suffix = Path(filename_raw).suffix.lower()
         if suffix == ".jpeg":
@@ -544,6 +544,7 @@ async def handle_upload_protocol_no(
 
         # Save to storage
         from bot.utils import protocol_storage_key
+
         key = protocol_storage_key(
             year=data["year"],
             product=data["product"],
@@ -581,7 +582,11 @@ async def handle_upload_protocol_no(
             raise RuntimeError("Failed to read inserted protocol from database")
 
         # Send success message
-        success_text = get_text(lang, "admin_success") + "\n\n" + format_protocol_text(protocol, lang)
+        success_text = (
+            get_text(lang, "admin_success")
+            + "\n\n"
+            + format_protocol_text(protocol, lang)
+        )
         await message.answer(
             success_text,
             reply_markup=build_download_keyboard(protocol.id, lang),

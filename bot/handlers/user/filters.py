@@ -53,11 +53,11 @@ TEXT = {
 
 def get_text(lang: str, key: str) -> str:
     """Get localized text.
-    
+
     Args:
         lang: Language code ('ru' or 'uz').
         key: Text key.
-    
+
     Returns:
         Localized text string.
     """
@@ -68,7 +68,7 @@ def get_text(lang: str, key: str) -> str:
 
 def get_predefined_products() -> list[str]:
     """Get list of predefined product names.
-    
+
     Returns:
         List of product name strings.
     """
@@ -83,7 +83,7 @@ async def handle_filters_menu(
     user_repo,
 ) -> None:
     """Handle filter menu callback - show year selection.
-    
+
     Args:
         callback: Callback query.
         state: FSM state context.
@@ -92,15 +92,15 @@ async def handle_filters_menu(
     """
     user_id = callback.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
-    
+
     await state.clear()
-    
+
     # Get available years
     years = await protocol_repo.list_years()
     if not years:
         await callback.answer(get_text(lang, "no_years"), show_alert=True)
         return
-    
+
     # Show year selection keyboard
     await state.set_state(FilterStates.choosing_year)
     await callback.message.answer(
@@ -118,7 +118,7 @@ async def handle_year_selection(
     user_repo,
 ) -> None:
     """Handle year selection callback - show product selection.
-    
+
     Args:
         callback: Callback query.
         state: FSM state context.
@@ -127,26 +127,26 @@ async def handle_year_selection(
     """
     user_id = callback.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
-    
+
     try:
         year = int(callback.data.split(":", 1)[1])
     except ValueError:
         await callback.answer("Invalid year", show_alert=True)
         return
-    
+
     # Get products for year (use predefined list or fetch from DB)
     products = get_predefined_products()
     if not products:
         products = await protocol_repo.list_products(year)
-    
+
     if not products:
         await callback.answer(get_text(lang, "no_products"), show_alert=True)
         return
-    
+
     # Store selected year and products in state
     await state.update_data(selected_year=year, products=products)
     await state.set_state(FilterStates.choosing_product)
-    
+
     # Show product selection keyboard
     await callback.message.answer(
         get_text(lang, "choose_product"),
@@ -163,7 +163,7 @@ async def handle_product_selection(
     user_repo,
 ) -> None:
     """Handle product selection callback - show protocol list.
-    
+
     Args:
         callback: Callback query.
         state: FSM state context.
@@ -172,35 +172,35 @@ async def handle_product_selection(
     """
     from bot.keyboards import build_main_inline_keyboard
     from bot.utils.protocol import send_protocol_list
-    
+
     user_id = callback.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
-    
+
     # Get state data
     data = await state.get_data()
     products = data.get("products", [])
-    
+
     try:
         index = int(callback.data.split(":", 1)[1])
     except ValueError:
         await callback.answer("Invalid product", show_alert=True)
         return
-    
+
     if index < 0 or index >= len(products):
         await callback.answer("Unavailable", show_alert=True)
         return
-    
+
     product = products[index]
     year = data.get("selected_year")
-    
+
     await state.clear()
-    
+
     # Find protocols by filters
     protocols = await protocol_repo.find_by_filters(year=year, product=product)
-    
+
     # Send protocol list
     await send_protocol_list(callback.message, protocols, lang)
-    
+
     # Show main menu
     await callback.message.answer(
         "Выберите действие:" if lang == "ru" else "Amalni tanlang:",

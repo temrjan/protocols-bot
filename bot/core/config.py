@@ -55,11 +55,11 @@ class Settings(BaseSettings):
                     int(x.strip()) for x in admins_str.split(",") if x.strip()
                 ]
         return data
-    
+
     @property
-    def PRIMARY_ADMIN_ID(self) -> int:
+    def primary_admin_id(self) -> int:
         """Get primary admin ID (first admin in the list).
-        
+
         Returns:
             Primary admin Telegram user ID.
         """

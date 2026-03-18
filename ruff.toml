@@ -1,11 +1,40 @@
+# Ruff — Python linter & formatter
+target-version = "py311"
+line-length = 88
+
 [lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "T20"]
-ignore = ["E501"]
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "W",      # pycodestyle warnings
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "A",      # flake8-builtins
+    "C4",     # flake8-comprehensions
+    "T20",    # flake8-print (no print() in production code)
+    "ASYNC",  # flake8-async
+    "S",      # flake8-bandit (security)
+    "PT",     # flake8-pytest-style
+    "SIM",    # flake8-simplify
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # function calls in defaults (aiogram patterns)
+    "S101",   # assert used (ok in tests)
+    "RUF001", # ambiguous unicode (Cyrillic in Russian strings)
+    "RUF003", # ambiguous unicode in comments (Cyrillic)
+]
 
 [format]
-line-length = 88
-indent-width = 4
+indent-style = "space"
 quote-style = "double"
 
 [lint.per-file-ignores]
 "__init__.py" = ["F401"]
+"tests/**/*.py" = ["S101", "T20"]  # allow assert and print in tests
+"app/**/*.py" = []  # legacy code, lint but don't block
+"bot/database/repositories/*.py" = ["S608"]  # parameterized queries, false positive
+"bot/utils/__init__.py" = ["E402"]  # deferred imports by design
