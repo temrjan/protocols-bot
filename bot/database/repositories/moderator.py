@@ -18,7 +18,7 @@ class ModeratorRepository(BaseRepository[Moderator]):
         """
         rows = await self._fetch_all(
             "SELECT tg_user_id FROM moderators ORDER BY tg_user_id",
-            tuple(),
+            (),
         )
         return [row["tg_user_id"] for row in rows]
 
@@ -54,7 +54,7 @@ class ModeratorRepository(BaseRepository[Moderator]):
         from bot.core import settings
 
         # Check if user is primary admin
-        if tg_user_id == settings.PRIMARY_ADMIN_ID:
+        if tg_user_id == settings.primary_admin_id:
             return True
 
         # Check if user is in moderators table

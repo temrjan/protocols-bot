@@ -7,14 +7,14 @@ from aiogram import Bot
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from loguru import logger
 
-from bot.core import settings, bot, dp, setup_logging
+from bot.core import bot, dp, settings, setup_logging
 from bot.database import Database
 
 # Import routers
-from bot.handlers import common, download, user, admin
+from bot.handlers import admin, common, download, user
 
 # Import middlewares
-from bot.middlewares import DatabaseMiddleware, ThrottlingMiddleware, LoggingMiddleware
+from bot.middlewares import DatabaseMiddleware, LoggingMiddleware, ThrottlingMiddleware
 
 # Import services
 from bot.services import StorageService
@@ -22,7 +22,7 @@ from bot.services import StorageService
 
 async def set_commands(bot_instance: Bot) -> None:
     """Set bot commands.
-    
+
     Args:
         bot_instance: Bot instance.
     """
@@ -79,14 +79,14 @@ async def main() -> None:
 
     # Include routers (ORDER MATTERS!)
     dp.include_routers(
-        common.router,               # /start, /cancel, language
-        download.router,             # Protocol downloads
-        user.filters.router,         # Filter-based search
-        user.search.router,          # Text search
-        user.documents.router,       # Additional documents
+        common.router,  # /start, /cancel, language
+        download.router,  # Protocol downloads
+        user.filters.router,  # Filter-based search
+        user.search.router,  # Text search
+        user.documents.router,  # Additional documents
         admin.upload_document.router,  # Document upload (BEFORE upload!)
-        admin.upload.router,         # Protocol upload
-        admin.moderators.router,     # Moderator management
+        admin.upload.router,  # Protocol upload
+        admin.moderators.router,  # Moderator management
     )
 
     # Register startup/shutdown hooks

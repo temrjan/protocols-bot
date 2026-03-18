@@ -2,7 +2,7 @@
 
 import re
 import unicodedata
-from typing import Iterable
+from collections.abc import Iterable
 
 TRANSLIT_MAP = {
     "а": "a",
@@ -117,9 +117,9 @@ def chunk(iterable: Iterable, size: int):
 __all__ = ["chunk", "escape_markdown", "protocol_storage_key", "slugify"]
 
 # Localization
-from bot.utils.text import get_text, TEXT
+from bot.utils.text import TEXT, get_text
 
-__all__.extend(["get_text", "TEXT"])
+__all__.extend(["TEXT", "get_text"])
 
 # Protocol utilities
 from bot.utils.protocol import format_size

@@ -122,12 +122,12 @@ def _shorten(text: str, limit: int = 32) -> str:
 
 
 __all__ = [
+    "MAIN_MENU_BUTTONS",
     "build_document_type_keyboard",
     "build_download_keyboard",
-    "build_product_keyboard",
     "build_main_inline_keyboard",
+    "build_product_keyboard",
     "build_year_keyboard",
-    "MAIN_MENU_BUTTONS",
 ]
 
 

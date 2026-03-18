@@ -6,10 +6,10 @@ This package contains keyboard generation functions:
 """
 
 from bot.keyboards.inline import (
-    build_main_inline_keyboard,
     MAIN_MENU_BUTTONS,
     build_document_type_keyboard,
     build_download_keyboard,
+    build_main_inline_keyboard,
     build_product_keyboard,
     build_year_keyboard,
 )
@@ -20,13 +20,13 @@ from bot.keyboards.reply import (
 )
 
 __all__ = [
+    "MAIN_MENU_BUTTONS",
     # Inline keyboards
     "build_document_type_keyboard",
     "build_download_keyboard",
-    "build_product_keyboard",
     "build_main_inline_keyboard",
+    "build_product_keyboard",
     "build_year_keyboard",
-    "MAIN_MENU_BUTTONS",
     # Reply keyboards
     "get_admin_keyboard",
     "get_cancel_keyboard",

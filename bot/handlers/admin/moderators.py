@@ -77,7 +77,7 @@ async def handle_admin_menu(
     lang = await user_repo.get_lang(user_id) or "ru"
 
     # Check if user is primary admin
-    if user_id != settings.PRIMARY_ADMIN_ID:
+    if user_id != settings.primary_admin_id:
         await message.answer(get_text(lang, "admin_not_primary"))
         return
 
@@ -85,9 +85,15 @@ async def handle_admin_menu(
 
     # Build admin menu keyboard
     builder = InlineKeyboardBuilder()
-    builder.button(text=get_text(lang, "admin_menu_upload"), callback_data="admin:upload")
-    builder.button(text=get_text(lang, "admin_menu_upload_doc"), callback_data="admin:upload_doc")
-    builder.button(text=get_text(lang, "admin_menu_add_mod"), callback_data="admin:add_mod")
+    builder.button(
+        text=get_text(lang, "admin_menu_upload"), callback_data="admin:upload"
+    )
+    builder.button(
+        text=get_text(lang, "admin_menu_upload_doc"), callback_data="admin:upload_doc"
+    )
+    builder.button(
+        text=get_text(lang, "admin_menu_add_mod"), callback_data="admin:add_mod"
+    )
     builder.adjust(1)
 
     await message.answer(
@@ -115,7 +121,7 @@ async def handle_admin_add_moderator(
     lang = await user_repo.get_lang(user_id) or "ru"
 
     # Check if user is primary admin
-    if user_id != settings.PRIMARY_ADMIN_ID:
+    if user_id != settings.primary_admin_id:
         await callback.answer(get_text(lang, "admin_not_primary"), show_alert=True)
         return
 
@@ -146,7 +152,7 @@ async def handle_admin_moderator_id(
     lang = await user_repo.get_lang(user_id) or "ru"
 
     # Check if user is primary admin
-    if user_id != settings.PRIMARY_ADMIN_ID:
+    if user_id != settings.primary_admin_id:
         await state.clear()
         await message.answer(get_text(lang, "admin_not_primary"))
         return
@@ -176,7 +182,9 @@ async def handle_admin_moderator_id(
     # Add moderator
     added = await moderator_repo.add_moderator(moderator_id)
     if added:
-        await message.answer(get_text(lang, "admin_moderator_added").format(id=moderator_id))
+        await message.answer(
+            get_text(lang, "admin_moderator_added").format(id=moderator_id)
+        )
     else:
         await message.answer(get_text(lang, "admin_moderator_exists"))
 

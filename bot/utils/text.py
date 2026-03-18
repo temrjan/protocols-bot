@@ -1,8 +1,6 @@
 """Localization utilities."""
 
-from typing import Dict
-
-TEXT: Dict[str, Dict[str, str]] = {
+TEXT: dict[str, dict[str, str]] = {
     "ru": {
         "choose_year": "Выберите год:",
         "choose_product": "Выберите препарат:",

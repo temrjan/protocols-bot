@@ -1,5 +1,7 @@
 """Document upload handlers for admins."""
 
+import contextlib
+
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -39,28 +41,26 @@ async def start_document_upload(
         return
 
     lang = await user_repo.get_lang(user_id) or "ru"
-    
+
     await state.set_state(AdminStates.waiting_doc_category)
     await state.update_data(lang=lang)
-    
+
     # Delete previous message
-    try:
+    with contextlib.suppress(Exception):
         await callback.message.delete()
-    except Exception:
-        pass
-    
+
     # Create cancel button
     cancel_builder = InlineKeyboardBuilder()
     cancel_text = "❌ Отменить" if lang == "ru" else "❌ Bekor qilish"
     cancel_builder.button(text=cancel_text, callback_data="cancel_upload")
-    
+
     await callback.message.answer(
         "Введите название категории документа:\n"
         "(например: 'Регистрационные удостоверения')"
         if lang == "ru"
         else "Hujjat kategoriyasi nomini kiriting:\n"
         "(masalan: 'Ro'yxatdan o'tkazish guvohnomalari')",
-        reply_markup=cancel_builder.as_markup()
+        reply_markup=cancel_builder.as_markup(),
     )
     await callback.answer()
 
@@ -71,17 +71,19 @@ async def handle_cancel_upload(
     state: FSMContext,
 ) -> None:
     """Handle cancel button.
-    
+
     Args:
         callback: Callback query.
         state: FSM context.
     """
     await state.clear()
-    try:
+    with contextlib.suppress(Exception):
         await callback.message.delete()
-    except Exception:
-        pass
-    await callback.answer("Загрузка отменена" if callback.from_user.language_code == "ru" else "Yuklash bekor qilindi")
+    await callback.answer(
+        "Загрузка отменена"
+        if callback.from_user.language_code == "ru"
+        else "Yuklash bekor qilindi"
+    )
 
 
 @router.message(AdminStates.waiting_doc_category, F.text)
@@ -90,29 +92,28 @@ async def handle_doc_category(
     state: FSMContext,
 ) -> None:
     """Handle category name input - ask for file.
-    
+
     Args:
         message: Message with category name.
         state: FSM context.
     """
     category = message.text.strip()
     lang = (await state.get_data()).get("lang") or "ru"
-    
+
     await state.update_data(category=category)
     await state.set_state(AdminStates.waiting_doc_file)
-    
+
     # Create cancel button
     cancel_builder = InlineKeyboardBuilder()
     cancel_text = "❌ Отменить" if lang == "ru" else "❌ Bekor qilish"
     cancel_builder.button(text=cancel_text, callback_data="cancel_upload")
-    
+
     await message.answer(
-        f"Категория: <b>{category}</b>\n\n"
-        f"Отправьте файл документа (PDF, JPG, PNG):"
+        f"Категория: <b>{category}</b>\n\nОтправьте файл документа (PDF, JPG, PNG):"
         if lang == "ru"
         else f"Kategoriya: <b>{category}</b>\n\n"
         f"Hujjat faylini yuboring (PDF, JPG, PNG):",
-        reply_markup=cancel_builder.as_markup()
+        reply_markup=cancel_builder.as_markup(),
     )
 
 
@@ -124,22 +125,22 @@ async def handle_doc_file(
     user_repo,
 ) -> None:
     """Handle file upload - save document.
-    
+
     Args:
         message: Message with file.
         state: FSM context.
         document_repo: Document repository.
         user_repo: User repository.
     """
+
     from bot.core import bot
-    from bot.services.storage import StorageService
     from bot.core.config import settings
-    from pathlib import Path
-    
+    from bot.services.storage import StorageService
+
     data = await state.get_data()
     category = data["category"]
     lang = data.get("lang") or "ru"
-    
+
     # Get file info
     if message.document:
         file_id = message.document.file_id
@@ -151,19 +152,19 @@ async def handle_doc_file(
         filename = f"{slugify(category)}.jpg"
         mime = "image/jpeg"
         size_bytes = message.photo[-1].file_size
-    
+
     # Download file
     file = await bot.get_file(file_id)
     file_data = await bot.download_file(file.file_path)
     file_bytes = file_data.read()
-    
+
     # Generate storage key
     storage_key = f"documents/{slugify(category)}/{filename}"
-    
+
     # Save to storage
     storage = StorageService(settings.storage_root)
     await storage.save_bytes(storage_key, file_bytes, mime)
-    
+
     # Save to database
     try:
         query = """
@@ -171,14 +172,22 @@ async def handle_doc_file(
             (category, filename, storage_key, size_bytes, mime, tg_file_id, uploaded_by)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """
-        cursor = await document_repo.conn.execute(
+        await document_repo.conn.execute(
             query,
-            (category, filename, storage_key, size_bytes, mime, file_id, message.from_user.id)
+            (
+                category,
+                filename,
+                storage_key,
+                size_bytes,
+                mime,
+                file_id,
+                message.from_user.id,
+            ),
         )
         await document_repo.conn.commit()
-        
+
         await state.clear()
-        
+
         success_msg = (
             f"✅ Документ успешно загружен!\n\n"
             f"Категория: <b>{category}</b>\n"
@@ -188,11 +197,13 @@ async def handle_doc_file(
             f"Kategoriya: <b>{category}</b>\n"
             f"Fayl: {filename}"
         )
-        
+
         await message.answer(success_msg)
-        
-        logger.info(f"Document uploaded: category='{category}', file='{filename}' by {message.from_user.id}")
-        
+
+        logger.info(
+            f"Document uploaded: category='{category}', file='{filename}' by {message.from_user.id}"
+        )
+
     except Exception as e:
         logger.exception(f"Failed to save document: {e}")
         await state.clear()

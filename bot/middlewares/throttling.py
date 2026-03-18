@@ -1,7 +1,8 @@
 """Throttling middleware - anti-flood protection."""
 
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
@@ -67,8 +68,6 @@ class ThrottlingMiddleware(BaseMiddleware):
 
         # Clean up old entries (older than 1 hour)
         cutoff = now - timedelta(hours=1)
-        self.user_last = {
-            uid: ts for uid, ts in self.user_last.items() if ts > cutoff
-        }
+        self.user_last = {uid: ts for uid, ts in self.user_last.items() if ts > cutoff}
 
         return await handler(event, data)
