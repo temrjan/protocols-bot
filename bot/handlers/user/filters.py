@@ -110,7 +110,7 @@ async def handle_filters_menu(
     await callback.answer()
 
 
-@router.callback_query(FilterStates.choosing_year, F.data.startswith("year:"))
+@router.callback_query(F.data.startswith("year:"))
 async def handle_year_selection(
     callback: CallbackQuery,
     state: FSMContext,
@@ -118,6 +118,9 @@ async def handle_year_selection(
     user_repo,
 ) -> None:
     """Handle year selection callback - show product selection.
+
+    No FSM state filter: the year is parsed from callback data,
+    so this handler works even after bot restart (MemoryStorage lost).
 
     Args:
         callback: Callback query.
@@ -155,7 +158,7 @@ async def handle_year_selection(
     await callback.answer()
 
 
-@router.callback_query(FilterStates.choosing_product, F.data.startswith("product:"))
+@router.callback_query(F.data.startswith("product:"))
 async def handle_product_selection(
     callback: CallbackQuery,
     state: FSMContext,
@@ -163,6 +166,9 @@ async def handle_product_selection(
     user_repo,
 ) -> None:
     """Handle product selection callback - show protocol list.
+
+    No FSM state filter: works even if state was lost (bot restart).
+    Falls back to year selection when state data is missing.
 
     Args:
         callback: Callback query.
@@ -186,8 +192,19 @@ async def handle_product_selection(
         await callback.answer("Invalid product", show_alert=True)
         return
 
-    if index < 0 or index >= len(products):
-        await callback.answer("Unavailable", show_alert=True)
+    # State lost (bot restart / stale keyboard) — restart filter flow
+    if not products or index < 0 or index >= len(products):
+        await state.clear()
+        years = await protocol_repo.list_years()
+        if not years:
+            await callback.answer(get_text(lang, "no_years"), show_alert=True)
+            return
+        await state.set_state(FilterStates.choosing_year)
+        await callback.message.answer(
+            get_text(lang, "choose_year"),
+            reply_markup=build_year_keyboard(years),
+        )
+        await callback.answer()
         return
 
     product = products[index]
