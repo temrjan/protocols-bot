@@ -59,7 +59,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'SCRIPT'
           set -e
-          cd /opt/protocols-bot
+          cd /opt/bots/protocols-bot
 
           echo "=== Pull latest code ==="
           git pull origin main

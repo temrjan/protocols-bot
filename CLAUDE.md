@@ -44,7 +44,7 @@ python -m bot
 ## Server
 
 - Host: biotact-main (95.111.224.251:2222)
-- Path: /opt/protocols-bot
+- Path: /opt/bots/protocols-bot
 - Service: systemctl (protocols-bot.service)
 - Deploy: git pull → pip install → systemctl restart
 
