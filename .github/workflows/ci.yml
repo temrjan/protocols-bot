@@ -62,7 +62,8 @@ jobs:
           cd /opt/bots/protocols-bot
 
           echo "=== Pull latest code ==="
-          git pull origin main
+          git fetch origin main
+          git reset --hard origin/main
 
           echo "=== Update dependencies ==="
           source .venv/bin/activate
