@@ -40,3 +40,45 @@ jobs:
           STORAGE_ROOT: /tmp/protocols-test
           ADMINS: "123456789"
         run: pytest tests/ -v --no-header
+
+  deploy:
+    name: Deploy to Production
+    needs: check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'SCRIPT'
+          set -e
+          cd /opt/protocols-bot
+
+          echo "=== Pull latest code ==="
+          git pull origin main
+
+          echo "=== Update dependencies ==="
+          source .venv/bin/activate
+          pip install -r requirements.txt --quiet
+          deactivate
+
+          echo "=== Restart service ==="
+          systemctl restart protocols-bot.service
+
+          echo "=== Health check ==="
+          sleep 3
+          systemctl is-active protocols-bot.service
+
+          echo "=== Deploy complete ==="
+          SCRIPT
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
