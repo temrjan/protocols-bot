@@ -55,7 +55,7 @@ async def fetch_from_local(protocol, storage_service) -> FSInputFile:
     """
     from pathlib import Path
 
-    path = await asyncio.to_thread(storage_service.open_path, protocol.storage_key)
+    path = await asyncio.to_thread(storage_service.get_path, protocol.storage_key)
     extension = Path(protocol.storage_key).suffix or ".pdf"
     filename = protocol.filename or f"{protocol.protocol_no}{extension}"
     return FSInputFile(path, filename=filename)
