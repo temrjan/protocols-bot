@@ -7,7 +7,7 @@ import sys
 from aiogram import Bot
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
-from aiogram.types import BotCommand, BotCommandScopeDefault
+from aiogram.types import BotCommand, BotCommandScopeDefault, ErrorEvent
 from loguru import logger
 
 from bot.core import bot, dp, settings, setup_logging
@@ -48,6 +48,41 @@ async def on_startup() -> None:
 async def on_shutdown() -> None:
     """Shutdown actions."""
     logger.info("Bot stopped")
+
+
+GENERIC_ERROR_TEXT = (
+    "Произошла ошибка. Попробуйте позже.\nXatolik yuz berdi. Keyinroq urinib ko'ring."
+)
+
+
+@dp.errors()
+async def global_error_handler(event: ErrorEvent) -> bool:
+    """Log any unhandled exception and surface a bilingual notice to the user.
+
+    Returning True prevents the exception from propagating back into the
+    polling loop, so a bug in a single handler can never bring the whole
+    bot down. Delivery of the notice itself is best-effort — we never let
+    this handler raise.
+    """
+    logger.exception(
+        "Unhandled handler exception: {}",
+        event.exception,
+    )
+
+    update = event.update
+    target = None
+    if update.message is not None:
+        target = update.message
+    elif update.callback_query is not None:
+        target = update.callback_query.message
+        with contextlib.suppress(Exception):
+            await update.callback_query.answer()
+
+    if target is not None:
+        with contextlib.suppress(Exception):
+            await target.answer(GENERIC_ERROR_TEXT)
+
+    return True
 
 
 async def verify_fsm_storage() -> None:
