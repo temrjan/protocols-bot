@@ -96,12 +96,12 @@ class ProtocolRepository(BaseRepository[Protocol]):
         await self.conn.commit()
         return cursor.rowcount
 
-    async def set_tg_file_id(self, protocol_id: int, file_id: str) -> None:
+    async def set_tg_file_id(self, protocol_id: int, file_id: str | None) -> None:
         """Set Telegram file ID for protocol.
 
         Args:
             protocol_id: Protocol ID.
-            file_id: Telegram file ID.
+            file_id: Telegram file ID, or None to invalidate a stale cached ID.
         """
         await self.conn.execute(
             "UPDATE protocols SET tg_file_id = ? WHERE id = ?",

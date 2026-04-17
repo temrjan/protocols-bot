@@ -168,38 +168,48 @@ async def handle_document_download(
     await callback.answer("Готовим файл…" if lang == "ru" else "Fayl tayyorlanmoqda…")
 
     # Send document file
-    try:
-        # Try to use cached file_id first
-        if document.tg_file_id:
-            await callback.message.answer_document(
-                document=document.tg_file_id,
-                caption=f"📄 {document.filename}",
-            )
-        else:
-            # Load from storage
-            storage = StorageService(settings.storage_root)
-            file_path = storage.root / document.storage_key
+    from aiogram.exceptions import TelegramBadRequest
+    from loguru import logger
 
-            if not file_path.exists():
-                await callback.message.answer(
-                    "Файл не найден" if lang == "ru" else "Fayl topilmadi"
+    try:
+        # Try cached file_id; on stale ID, invalidate and re-upload from storage.
+        if document.tg_file_id:
+            try:
+                await callback.message.answer_document(
+                    document=document.tg_file_id,
+                    caption=f"📄 {document.filename}",
                 )
                 return
+            except TelegramBadRequest as exc:
+                logger.warning(
+                    "Stale tg_file_id for document {id}: {err}; re-uploading",
+                    id=doc_id,
+                    err=exc.message,
+                )
+                await document_repo.update_file_id(doc_id, None)
 
-            # Send file
-            input_file = FSInputFile(file_path, filename=document.filename)
-            sent = await callback.message.answer_document(
-                document=input_file,
-                caption=f"📄 {document.filename}",
+        # Load from storage
+        storage = StorageService(settings.storage_root)
+        file_path = storage.root / document.storage_key
+
+        if not file_path.exists():
+            await callback.message.answer(
+                "Файл не найден" if lang == "ru" else "Fayl topilmadi"
             )
+            return
 
-            # Save file_id for future use
-            if sent.document:
-                await document_repo.update_file_id(doc_id, sent.document.file_id)
+        # Send file
+        input_file = FSInputFile(file_path, filename=document.filename)
+        sent = await callback.message.answer_document(
+            document=input_file,
+            caption=f"📄 {document.filename}",
+        )
+
+        # Save file_id for future use
+        if sent.document:
+            await document_repo.update_file_id(doc_id, sent.document.file_id)
 
     except Exception as e:
-        from loguru import logger
-
         logger.exception(f"Failed to send document {doc_id}: {e}")
         await callback.message.answer(
             "Ошибка при отправке файла" if lang == "ru" else "Fayl yuborishda xatolik"
