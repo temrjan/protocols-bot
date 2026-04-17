@@ -35,6 +35,5 @@ quote-style = "double"
 [lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/**/*.py" = ["S101", "T20"]  # allow assert and print in tests
-"app/**/*.py" = []  # legacy code, lint but don't block
 "bot/database/repositories/*.py" = ["S608"]  # parameterized queries, false positive
 "bot/utils/__init__.py" = ["E402"]  # deferred imports by design
