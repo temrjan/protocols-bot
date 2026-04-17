@@ -54,30 +54,15 @@ async def handle_documents_menu(
         document_repo: Document repository.
         user_repo: User repository.
     """
+    from bot.handlers.user.menus import start_documents_flow
+
     user_id = callback.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
 
-    await state.clear()
-
-    # Get all unique categories
-    categories = await document_repo.get_categories()
-
-    if not categories:
-        await callback.answer(get_text(lang, "no_categories"), show_alert=True)
-        return
-
-    # Build category keyboard
-    # Using index instead of name to stay within Telegram's 64-byte callback_data limit.
-    builder = InlineKeyboardBuilder()
-    for idx, category in enumerate(categories):
-        builder.button(text=f"📁 {category}", callback_data=f"doc_cat:{idx}")
-    builder.adjust(1)
-
-    await callback.message.answer(
-        get_text(lang, "choose_category"),
-        reply_markup=builder.as_markup(),
-    )
     await callback.answer()
+    await start_documents_flow(
+        callback.message, state, lang=lang, document_repo=document_repo
+    )
 
 
 @router.callback_query(F.data.startswith("doc_cat:"))

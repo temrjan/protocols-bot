@@ -57,12 +57,13 @@ async def handle_search_menu(
         state: FSM state context.
         user_repo: User repository (injected by middleware).
     """
+    from bot.handlers.user.menus import start_search_flow
+
     user_id = callback.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
 
-    await state.set_state(SearchState.waiting_text)
-    await callback.message.answer(get_text(lang, "ask_search_text"))
     await callback.answer()
+    await start_search_flow(callback.message, state, lang=lang)
 
 
 @router.message(SearchState.waiting_text)

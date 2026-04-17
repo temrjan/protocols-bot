@@ -182,7 +182,11 @@ async def handle_reply_keyboard_fallback(
         protocol_repo: Protocol repository (injected by middleware).
         document_repo: Document repository (injected by middleware).
     """
-    from bot.keyboards import build_year_keyboard
+    from bot.handlers.user.menus import (
+        start_documents_flow,
+        start_filters_flow,
+        start_search_flow,
+    )
 
     user_id = message.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
@@ -197,61 +201,12 @@ async def handle_reply_keyboard_fallback(
     await state.clear()
 
     if action == "menu:filters":
-        from bot.states import FilterStates
-
-        years = await protocol_repo.list_years()
-        if not years:
-            await message.answer(
-                "В базе пока нет доступных протоколов."
-                if lang == "ru"
-                else "Bazadda protokollar topilmadi.",
-            )
-            await message.answer(
-                get_text(lang, "choose_action"),
-                reply_markup=build_main_inline_keyboard(lang),
-            )
-            return
-        await state.set_state(FilterStates.choosing_year)
-        await message.answer(
-            "Выберите год." if lang == "ru" else "Yilni tanlang.",
-            reply_markup=build_year_keyboard(years),
-        )
-
+        await start_filters_flow(message, state, lang=lang, protocol_repo=protocol_repo)
     elif action == "menu:search":
-        from bot.states import SearchState
-
-        await state.set_state(SearchState.waiting_text)
-        await message.answer(
-            "Введите номер протокола или название препарата."
-            if lang == "ru"
-            else "Protokol raqamini yoki preparat nomini kiriting.",
-        )
-
+        await start_search_flow(message, state, lang=lang)
     elif action == "menu:documents":
-        from aiogram.utils.keyboard import InlineKeyboardBuilder
-
-        categories = await document_repo.get_categories()
-        if not categories:
-            await message.answer(
-                "Документы не найдены." if lang == "ru" else "Hujjatlar topilmadi.",
-            )
-            await message.answer(
-                get_text(lang, "choose_action"),
-                reply_markup=build_main_inline_keyboard(lang),
-            )
-            return
-        builder = InlineKeyboardBuilder()
-        for idx, category in enumerate(categories):
-            builder.button(
-                text=f"📁 {category}",
-                callback_data=f"doc_cat:{idx}",
-            )
-        builder.adjust(1)
-        await message.answer(
-            "Выберите категорию документов:"
-            if lang == "ru"
-            else "Hujjat kategoriyasini tanlang:",
-            reply_markup=builder.as_markup(),
+        await start_documents_flow(
+            message, state, lang=lang, document_repo=document_repo
         )
 
 
