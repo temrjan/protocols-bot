@@ -241,10 +241,10 @@ async def handle_reply_keyboard_fallback(
             )
             return
         builder = InlineKeyboardBuilder()
-        for category in categories:
+        for idx, category in enumerate(categories):
             builder.button(
                 text=f"📁 {category}",
-                callback_data=f"doc_category:{category}",
+                callback_data=f"doc_cat:{idx}",
             )
         builder.adjust(1)
         await message.answer(

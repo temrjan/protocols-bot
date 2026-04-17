@@ -67,9 +67,10 @@ async def handle_documents_menu(
         return
 
     # Build category keyboard
+    # Using index instead of name to stay within Telegram's 64-byte callback_data limit.
     builder = InlineKeyboardBuilder()
-    for category in categories:
-        builder.button(text=f"📁 {category}", callback_data=f"doc_category:{category}")
+    for idx, category in enumerate(categories):
+        builder.button(text=f"📁 {category}", callback_data=f"doc_cat:{idx}")
     builder.adjust(1)
 
     await callback.message.answer(
@@ -79,7 +80,7 @@ async def handle_documents_menu(
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith("doc_category:"))
+@router.callback_query(F.data.startswith("doc_cat:"))
 async def handle_category_selection(
     callback: CallbackQuery,
     document_repo,
@@ -95,7 +96,18 @@ async def handle_category_selection(
     user_id = callback.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
 
-    category = callback.data.split(":", 1)[1]
+    try:
+        idx = int(callback.data.split(":", 1)[1])
+    except ValueError:
+        await callback.answer("Invalid category", show_alert=True)
+        return
+
+    categories = await document_repo.get_categories()
+    if not 0 <= idx < len(categories):
+        await callback.answer(get_text(lang, "no_documents"), show_alert=True)
+        return
+
+    category = categories[idx]
 
     # Get documents in category
     documents = await document_repo.find_by_category(category)
