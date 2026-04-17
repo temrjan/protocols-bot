@@ -119,14 +119,20 @@ async def send_protocol_list(
         protocols: List of protocol models.
         lang: Language code ('ru' or 'uz').
     """
+    from bot.utils import safe_send_many
+
     if not protocols:
         await message.answer(get_text(lang, "no_protocols"))
         return
 
-    for protocol in protocols:
-        caption = format_protocol_text(protocol, lang)
-        keyboard = build_download_keyboard(protocol.id, lang)
-        await message.answer(caption, reply_markup=keyboard)
+    await safe_send_many(
+        message,
+        protocols,
+        lambda protocol: (
+            format_protocol_text(protocol, lang),
+            build_download_keyboard(protocol.id, lang),
+        ),
+    )
 
 
 __all__ = ["format_protocol_text", "format_size", "send_protocol_list"]
