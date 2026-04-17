@@ -90,24 +90,16 @@ async def handle_filters_menu(
         protocol_repo: Protocol repository (injected by middleware).
         user_repo: User repository (injected by middleware).
     """
+    from bot.handlers.user.menus import start_filters_flow
+
     user_id = callback.from_user.id
     lang = await user_repo.get_lang(user_id) or "ru"
 
-    await state.clear()
-
-    # Get available years
-    years = await protocol_repo.list_years()
-    if not years:
-        await callback.answer(get_text(lang, "no_years"), show_alert=True)
-        return
-
-    # Show year selection keyboard
-    await state.set_state(FilterStates.choosing_year)
-    await callback.message.answer(
-        get_text(lang, "choose_year"),
-        reply_markup=build_year_keyboard(years),
-    )
     await callback.answer()
+    await state.clear()
+    await start_filters_flow(
+        callback.message, state, lang=lang, protocol_repo=protocol_repo
+    )
 
 
 @router.callback_query(F.data.startswith("year:"))
