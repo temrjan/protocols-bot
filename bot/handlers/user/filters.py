@@ -10,27 +10,11 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
+from bot.core.products import get_predefined_products
 from bot.keyboards import build_product_keyboard, build_year_keyboard
 from bot.states import FilterStates
 
 router = Router(name="user_filters")
-
-# Product names (predefined list)
-PRODUCT_NAMES = (
-    "DERMACOMPLEX",
-    "OPHTALMOCOMPLEX",
-    "NEUROCOMPLEX KIDS",
-    "IMMUNOCOMPLEX",
-    "IMMUNOCOMPLEX KIDS",
-    "CALCIY TRIACTIVE D3",
-    "BIFOLAK ZINCUM+C+D3",
-    "BIFOLAK ZINCUM",
-    "BIFOLAK MAGNIY / CAPSULA",
-    "BIFOLAK MAGNIY / STICK",
-    "BIFOLAK ACTIVE / CAPSULA",
-    "BIFOLAK ACTIVE / STICK",
-    "BIFOLAK NEO",
-)
 
 # Text constants
 TEXT = {
@@ -64,15 +48,6 @@ def get_text(lang: str, key: str) -> str:
     base = TEXT["ru"]
     data = TEXT.get(lang, base)
     return data.get(key, base.get(key, key))
-
-
-def get_predefined_products() -> list[str]:
-    """Get list of predefined product names.
-
-    Returns:
-        List of product name strings.
-    """
-    return [item.strip() for item in PRODUCT_NAMES if item.strip()]
 
 
 @router.callback_query(F.data == "menu:filters")

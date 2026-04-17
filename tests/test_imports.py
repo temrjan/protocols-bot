@@ -73,28 +73,28 @@ def test_service_imports() -> None:
     print("✅ Service imports OK")
 
 
-def test_filter_imports() -> None:
-    """Test filter imports.
+def test_products_import() -> None:
+    """Test canonical product list imports.
 
-    Verifies that custom filters can be imported:
-    - IsAdmin: Admin user filter
-    - IsModerator: Moderator user filter
+    Verifies the shared product registry is available:
+    - PRODUCT_NAMES: tuple of known product names
+    - get_predefined_products: sanitized list helper
     """
-    from bot.filters import IsAdmin, IsModerator
-    print("✅ Filter imports OK")
+    from bot.core.products import PRODUCT_NAMES, get_predefined_products
+    assert isinstance(PRODUCT_NAMES, tuple)
+    assert len(get_predefined_products()) > 0
+    print("✅ Products import OK")
 
 
 def test_utils_imports() -> None:
     """Test utilities imports.
 
     Verifies that utility functions can be imported:
-    - General utilities: slugify, protocol_storage_key, format_size
+    - General utilities: slugify, protocol_storage_key, format_size, safe_send_many
     - Protocol utilities: format_protocol_text, send_protocol_list
-    - Document utilities: format_document_text, send_document_list
     """
-    from bot.utils import slugify, protocol_storage_key, format_size
+    from bot.utils import slugify, protocol_storage_key, format_size, safe_send_many
     from bot.utils.protocol import format_protocol_text, send_protocol_list
-    from bot.utils.document import format_document_text, send_document_list
     print("✅ Utils imports OK")
 
 
@@ -104,6 +104,6 @@ if __name__ == "__main__":
     test_handler_imports()
     test_middleware_imports()
     test_service_imports()
-    test_filter_imports()
+    test_products_import()
     test_utils_imports()
     print("\n🎉 All imports successful!")

@@ -1,6 +1,7 @@
 """Document upload handlers for admins."""
 
 import contextlib
+from pathlib import Path
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
@@ -158,8 +159,12 @@ async def handle_doc_file(
     file_data = await bot.download_file(file.file_path)
     file_bytes = file_data.read()
 
-    # Generate storage key
-    storage_key = f"documents/{slugify(category)}/{filename}"
+    # Generate storage key. Sanitize the filename before use: StorageService
+    # already rejects path-traversal keys, but slugifying the stem keeps the
+    # key ASCII-only and predictable regardless of what Telegram delivered.
+    suffix = Path(filename).suffix.lower() or ".bin"
+    stem_slug = slugify(Path(filename).stem) or "document"
+    storage_key = f"documents/{slugify(category)}/{stem_slug}{suffix}"
 
     # Save to storage
     storage = StorageService(settings.storage_root)
