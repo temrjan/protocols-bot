@@ -68,7 +68,9 @@ async def main() -> None:
     dp.callback_query.middleware(LoggingMiddleware())
 
     # 2. Throttling - second to prevent flood
+    # Separate instances so message and callback cooldowns are independent.
     dp.message.middleware(ThrottlingMiddleware(rate_limit=1.0))
+    dp.callback_query.middleware(ThrottlingMiddleware(rate_limit=1.0))
 
     # 3. Database - last to inject repositories after throttling
     dp.message.middleware(DatabaseMiddleware(db))

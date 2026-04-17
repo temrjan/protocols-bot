@@ -1,25 +1,28 @@
 """Throttling middleware - anti-flood protection."""
 
+import contextlib
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta
 from typing import Any
 
 from aiogram import BaseMiddleware
-from aiogram.types import Message, TelegramObject
+from aiogram.types import CallbackQuery, Message, TelegramObject
 from loguru import logger
 
 
 class ThrottlingMiddleware(BaseMiddleware):
     """Anti-flood middleware with rate limiting.
 
-    Limits message rate to prevent spam (1 message per second per user by default).
+    Limits the rate of incoming messages and callback queries (1 event per
+    second per user by default). Register a separate instance for each event
+    type so the cooldowns remain independent.
     """
 
     def __init__(self, rate_limit: float = 1.0) -> None:
         """Initialize throttling middleware.
 
         Args:
-            rate_limit: Minimum seconds between messages from same user.
+            rate_limit: Minimum seconds between events from the same user.
         """
         self.rate_limit = rate_limit
         self.user_last: dict[int, datetime] = {}
@@ -30,7 +33,7 @@ class ThrottlingMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        """Check rate limit before processing message.
+        """Check rate limit before processing event.
 
         Args:
             handler: Handler function.
@@ -40,8 +43,8 @@ class ThrottlingMiddleware(BaseMiddleware):
         Returns:
             Handler result or None if throttled.
         """
-        # Only throttle messages
-        if not isinstance(event, Message):
+        # Only throttle messages and callback queries
+        if not isinstance(event, (Message, CallbackQuery)):
             return await handler(event, data)
 
         user_id = event.from_user.id if event.from_user else None
@@ -56,11 +59,14 @@ class ThrottlingMiddleware(BaseMiddleware):
             delta = (now - last_time).total_seconds()
             if delta < self.rate_limit:
                 logger.warning(
-                    "User {} throttled ({}s since last message)",
+                    "User {} throttled ({}s since last event)",
                     user_id,
                     delta,
                 )
-                # Silently ignore throttled messages
+                # Acknowledge callback to clear the spinner; ignore stale callbacks.
+                if isinstance(event, CallbackQuery):
+                    with contextlib.suppress(Exception):
+                        await event.answer()
                 return None
 
         # Update last message time
