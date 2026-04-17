@@ -1,8 +1,13 @@
 """Utility functions for the bot."""
 
+import asyncio
 import re
 import unicodedata
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from aiogram.types import InlineKeyboardMarkup, Message
 
 TRANSLIT_MAP = {
     "а": "a",
@@ -114,7 +119,53 @@ def chunk(iterable: Iterable, size: int):
         yield bucket
 
 
-__all__ = ["chunk", "escape_markdown", "protocol_storage_key", "slugify"]
+T = TypeVar("T")
+
+
+async def safe_send_many(
+    message: "Message",
+    items: Iterable[T],
+    builder: Callable[[T], "tuple[str, InlineKeyboardMarkup | None]"],
+    *,
+    pause: float = 0.05,
+) -> None:
+    """Send one message per item while respecting Telegram's flood limits.
+
+    Paces individual ``message.answer`` calls with a short ``pause`` between
+    them and handles ``TelegramRetryAfter`` by sleeping for the requested
+    interval and retrying the failed message exactly once. Longer-running
+    bursts (category listings, search results) stay well under the ~30
+    messages/sec per-chat cap.
+
+    Args:
+        message: The aiogram message used to reply.
+        items: Iterable of records to render.
+        builder: Function that maps a record to ``(text, reply_markup)``.
+        pause: Seconds to wait between sends.
+    """
+    from aiogram.exceptions import TelegramRetryAfter
+
+    first = True
+    for item in items:
+        if not first:
+            await asyncio.sleep(pause)
+        first = False
+
+        text, reply_markup = builder(item)
+        try:
+            await message.answer(text, reply_markup=reply_markup)
+        except TelegramRetryAfter as exc:
+            await asyncio.sleep(exc.retry_after)
+            await message.answer(text, reply_markup=reply_markup)
+
+
+__all__ = [
+    "chunk",
+    "escape_markdown",
+    "protocol_storage_key",
+    "safe_send_many",
+    "slugify",
+]
 
 # Localization
 from bot.utils.text import TEXT, get_text

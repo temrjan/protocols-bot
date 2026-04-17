@@ -101,19 +101,21 @@ async def handle_category_selection(
         await callback.answer(get_text(lang, "no_documents"), show_alert=True)
         return
 
-    # Send each document with download button
-    for doc in documents:
-        builder = InlineKeyboardBuilder()
-        download_text = "📥 Скачать" if lang == "ru" else "📥 Yuklab olish"
-        builder.button(text=download_text, callback_data=f"download_doc:{doc.id}")
+    from bot.utils import safe_send_many
 
-        await callback.message.answer(
+    download_text = "📥 Скачать" if lang == "ru" else "📥 Yuklab olish"
+
+    def _build(doc):
+        builder = InlineKeyboardBuilder()
+        builder.button(text=download_text, callback_data=f"download_doc:{doc.id}")
+        text = (
             f"📄 <b>{doc.filename}</b>\nКатегория: {category}"
             if lang == "ru"
-            else f"📄 <b>{doc.filename}</b>\nKategoriya: {category}",
-            reply_markup=builder.as_markup(),
+            else f"📄 <b>{doc.filename}</b>\nKategoriya: {category}"
         )
+        return text, builder.as_markup()
 
+    await safe_send_many(callback.message, documents, _build)
     await callback.answer()
 
 
