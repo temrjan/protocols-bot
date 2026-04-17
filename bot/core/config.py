@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # Admin (parsed from comma-separated ADMINS env var)
     admin_ids: list[int] = Field(default_factory=list)
 
+    # Redis (FSM storage). When None, falls back to in-memory storage.
+    redis_url: str | None = None
+
     # Application
     log_level: str = "INFO"
     debug: bool = False
