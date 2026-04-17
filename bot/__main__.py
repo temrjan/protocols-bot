@@ -1,9 +1,12 @@
 """Bot entry point."""
 
 import asyncio
+import contextlib
 import sys
 
 from aiogram import Bot
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from loguru import logger
 
@@ -47,10 +50,34 @@ async def on_shutdown() -> None:
     logger.info("Bot stopped")
 
 
+async def verify_fsm_storage() -> None:
+    """Ping RedisStorage at startup; on failure, swap Dispatcher to MemoryStorage.
+
+    Keeps the bot alive when Redis is unreachable — FSM state becomes volatile,
+    but polling and handlers continue to work.
+    """
+    if not isinstance(dp.fsm.storage, RedisStorage):
+        return
+    try:
+        await dp.fsm.storage.redis.ping()
+        logger.info("Redis FSM storage ping OK")
+    except Exception as exc:
+        logger.warning(
+            "Redis FSM storage unreachable ({}); falling back to MemoryStorage",
+            exc,
+        )
+        with contextlib.suppress(Exception):
+            await dp.fsm.storage.close()
+        dp.fsm.storage = MemoryStorage()
+
+
 async def main() -> None:
     """Main function."""
     # Setup logging
     setup_logging(settings.log_level)
+
+    # Verify FSM storage is reachable; fallback to memory if Redis is down.
+    await verify_fsm_storage()
 
     # Initialize database
     db = Database(settings.db_path)
@@ -107,6 +134,8 @@ async def main() -> None:
     finally:
         await bot.session.close()
         await db.close()
+        with contextlib.suppress(Exception):
+            await dp.fsm.storage.close()
 
 
 if __name__ == "__main__":
