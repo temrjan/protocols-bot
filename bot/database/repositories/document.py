@@ -55,12 +55,12 @@ class DocumentRepository(BaseRepository[Document]):
         row = await self._fetch_one(query, (doc_id,))
         return self._row_to_document(row) if row else None
 
-    async def update_file_id(self, doc_id: int, file_id: str) -> None:
+    async def update_file_id(self, doc_id: int, file_id: str | None) -> None:
         """Update Telegram file ID for document.
 
         Args:
             doc_id: Document ID.
-            file_id: Telegram file ID.
+            file_id: Telegram file ID, or None to invalidate a stale cached ID.
         """
         await self.conn.execute(
             "UPDATE documents SET tg_file_id = ? WHERE id = ?",
