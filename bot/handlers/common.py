@@ -74,10 +74,13 @@ async def handle_start(
     """
     await state.clear()
 
-    # Set default language
+    # Preserve the user's saved language; default to ru only for new users.
     user_id = message.from_user.id
-    await user_repo.set_lang(user_id, "ru")
-    await state.update_data(lang="ru")
+    saved_lang = await user_repo.get_lang(user_id)
+    lang = saved_lang or "ru"
+    if saved_lang is None:
+        await user_repo.set_lang(user_id, lang)
+    await state.update_data(lang=lang)
 
     # Remove any existing reply keyboard
     await message.answer(

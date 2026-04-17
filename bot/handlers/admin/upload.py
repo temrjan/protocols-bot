@@ -15,11 +15,13 @@ from datetime import datetime
 from pathlib import Path
 
 from aiogram import F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from loguru import logger
 
+from bot.core.products import get_predefined_products
 from bot.states import UploadStates
 
 router = Router(name="admin_upload")
@@ -36,23 +38,6 @@ EXTENSION_TO_MIME = {
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
 }
-
-# Product names
-PRODUCT_NAMES = (
-    "DERMACOMPLEX",
-    "OPHTALMOCOMPLEX",
-    "NEUROCOMPLEX KIDS",
-    "IMMUNOCOMPLEX",
-    "IMMUNOCOMPLEX KIDS",
-    "CALCIY TRIACTIVE D3",
-    "BIFOLAK ZINCUM+C+D3",
-    "BIFOLAK ZINCUM",
-    "BIFOLAK MAGNIY / CAPSULA",
-    "BIFOLAK MAGNIY / STICK",
-    "BIFOLAK ACTIVE / CAPSULA",
-    "BIFOLAK ACTIVE / STICK",
-    "BIFOLAK NEO",
-)
 
 # Text constants
 TEXT = {
@@ -98,15 +83,6 @@ def get_text(lang: str, key: str) -> str:
     base = TEXT["ru"]
     data = TEXT.get(lang, base)
     return data.get(key, base.get(key, key))
-
-
-def get_predefined_products() -> list[str]:
-    """Get list of predefined product names.
-
-    Returns:
-        List of product name strings.
-    """
-    return [item.strip() for item in PRODUCT_NAMES if item.strip()]
 
 
 def build_product_keyboard(products: list[str]) -> InlineKeyboardMarkup:
@@ -194,7 +170,7 @@ async def handle_admin_upload_menu(
     await callback.message.answer(get_text(lang, "admin_upload_hint"))
 
 
-@router.message(F.document)
+@router.message(StateFilter(None), F.document)
 async def handle_document(
     message: Message,
     state: FSMContext,
@@ -202,6 +178,10 @@ async def handle_document(
     user_repo,
 ) -> None:
     """Handle document upload - prepare for protocol upload.
+
+    Only matches when the user is not in another FSM flow, so sending a
+    document mid-way through (e.g. while waiting for a protocol number)
+    no longer overwrites the ongoing state.
 
     Args:
         message: Incoming message with document.
@@ -247,7 +227,7 @@ async def handle_document(
     )
 
 
-@router.message(F.photo)
+@router.message(StateFilter(None), F.photo)
 async def handle_photo(
     message: Message,
     state: FSMContext,
@@ -255,6 +235,9 @@ async def handle_photo(
     user_repo,
 ) -> None:
     """Handle photo upload - prepare for protocol upload.
+
+    Only matches outside an active FSM flow for the same reason as
+    :func:`handle_document`.
 
     Args:
         message: Incoming message with photo.
@@ -525,7 +508,6 @@ async def handle_upload_protocol_no(
         payload = buffer.getvalue()
 
         # Validate file
-        str(data.get("mime") or "").lower()
         filename_raw = str(data.get("filename") or "")
         suffix = Path(filename_raw).suffix.lower()
         if suffix == ".jpeg":
