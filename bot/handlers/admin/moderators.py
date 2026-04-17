@@ -27,6 +27,7 @@ TEXT = {
         "admin_invalid_id": "Введите корректный числовой Telegram ID.",
         "admin_moderator_added": "Пользователь {id} назначен модератором и теперь может загружать протоколы.",
         "admin_moderator_exists": "Этот пользователь уже имеет права для загрузки протоколов.",
+        "admin_moderator_error": "Не удалось назначить модератора из-за ошибки базы данных. Попробуйте позже.",
         "admin_not_primary": "У вас нет доступа к админ-панели.",
     },
     "uz": {
@@ -38,6 +39,7 @@ TEXT = {
         "admin_invalid_id": "Iltimos, to'g'ri raqamli Telegram ID kiriting.",
         "admin_moderator_added": "{id} foydalanuvchi moderator etib tayinlandi va endi protokollarni yuklashi mumkin.",
         "admin_moderator_exists": "Bu foydalanuvchi allaqachon yuklash huquqiga ega.",
+        "admin_moderator_error": "Ma'lumotlar bazasida xatolik yuz berdi. Keyinroq urinib ko'ring.",
         "admin_not_primary": "Sizda admin panelga kirish huquqi yo'q.",
     },
 }
@@ -179,8 +181,19 @@ async def handle_admin_moderator_id(
         )
         return
 
-    # Add moderator
-    added = await moderator_repo.add_moderator(moderator_id)
+    # Add moderator. Database-level errors (other than UNIQUE violations)
+    # surface here so the admin sees a clear message instead of silence.
+    try:
+        added = await moderator_repo.add_moderator(moderator_id)
+    except Exception:
+        await state.clear()
+        await message.answer(get_text(lang, "admin_moderator_error"))
+        await message.answer(
+            "Выберите действие:" if lang == "ru" else "Amalni tanlang:",
+            reply_markup=build_main_inline_keyboard(lang),
+        )
+        return
+
     if added:
         await message.answer(
             get_text(lang, "admin_moderator_added").format(id=moderator_id)

@@ -1,5 +1,9 @@
 """Moderator repository for database operations."""
 
+import sqlite3
+
+from loguru import logger
+
 from bot.database.models import Moderator
 from bot.database.repositories.base import BaseRepository
 
@@ -29,7 +33,8 @@ class ModeratorRepository(BaseRepository[Moderator]):
             tg_user_id: Telegram user ID.
 
         Returns:
-            True if moderator was added, False if already exists.
+            True if moderator was added, False if already exists (UNIQUE
+            constraint). Other database errors are logged and re-raised.
         """
         try:
             await self.conn.execute(
@@ -38,9 +43,16 @@ class ModeratorRepository(BaseRepository[Moderator]):
             )
             await self.conn.commit()
             return True
-        except Exception:
+        except sqlite3.IntegrityError:
             await self.conn.rollback()
             return False
+        except Exception:
+            await self.conn.rollback()
+            logger.exception(
+                "Failed to add moderator {}",
+                tg_user_id,
+            )
+            raise
 
     async def is_moderator(self, tg_user_id: int) -> bool:
         """Check if user is a moderator.
