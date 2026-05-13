@@ -23,6 +23,7 @@ TEXT = {
         "admin_menu_upload": "Загрузить протокол",
         "admin_menu_upload_doc": "📋 Загрузить документ",
         "admin_menu_add_mod": "Назначить модератора",
+        "admin_menu_health": "🩺 Здоровье хранилища",
         "admin_enter_moderator": "Введите Telegram ID пользователя, которому нужно выдать права загрузки.",
         "admin_invalid_id": "Введите корректный числовой Telegram ID.",
         "admin_moderator_added": "Пользователь {id} назначен модератором и теперь может загружать протоколы.",
@@ -35,6 +36,7 @@ TEXT = {
         "admin_menu_upload": "Protokolni yuklash",
         "admin_menu_upload_doc": "📋 Hujjat yuklash",
         "admin_menu_add_mod": "Moderator tayinlash",
+        "admin_menu_health": "🩺 Saqlash sog'lig'i",
         "admin_enter_moderator": "Moderator qilish kerak bo'lgan foydalanuvchining Telegram ID raqamini kiriting.",
         "admin_invalid_id": "Iltimos, to'g'ri raqamli Telegram ID kiriting.",
         "admin_moderator_added": "{id} foydalanuvchi moderator etib tayinlandi va endi protokollarni yuklashi mumkin.",
@@ -95,6 +97,9 @@ async def handle_admin_menu(
     )
     builder.button(
         text=get_text(lang, "admin_menu_add_mod"), callback_data="admin:add_mod"
+    )
+    builder.button(
+        text=get_text(lang, "admin_menu_health"), callback_data="admin:health"
     )
     builder.adjust(1)
 

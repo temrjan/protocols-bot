@@ -3,13 +3,17 @@
 Cross-references the protocols and documents tables against files on
 disk and reports any drift. Catches silent storage loss before users
 notice broken downloads.
+
+Two entry points share the same report:
+- /admin_health command
+- "Health" button in the /admin inline menu
 """
 
 import asyncio
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, Message
 from loguru import logger
 
 router = Router(name="admin_health")
@@ -61,30 +65,29 @@ def get_text(lang: str, key: str) -> str:
     return data.get(key, base.get(key, key))
 
 
-@router.message(Command("admin_health"))
-async def handle_admin_health(
-    message: Message,
-    user_repo,
+async def _build_health_report(
+    *,
     protocol_repo,
     document_repo,
     storage_service,
-) -> None:
-    """Report DB-vs-filesystem drift for protocols and documents.
+    lang: str,
+    admin_id: int,
+) -> str:
+    """Compute drift between DB rows and files on disk, log it, return a report.
 
-    Only the primary admin can run this. Counts active rows in each
-    table, checks every storage_key against the file on disk, and
-    lists up to MAX_MISSING_PREVIEW missing protocol rows so they can
-    be re-uploaded.
+    Logging is side-effectful but cheap (one INFO line); keeping it here
+    avoids duplicating the same metric calculation in two handlers.
+
+    Args:
+        protocol_repo: Protocol repository (injected by middleware).
+        document_repo: Document repository (injected by middleware).
+        storage_service: Storage service (injected by middleware).
+        lang: Language code for the response text.
+        admin_id: Telegram user id of the requester (for logging).
+
+    Returns:
+        Localized multi-line drift report ready to send.
     """
-    from bot.core import settings
-
-    user_id = message.from_user.id
-    lang = await user_repo.get_lang(user_id) or "ru"
-
-    if user_id != settings.primary_admin_id:
-        await message.answer(get_text(lang, "no_admin"))
-        return
-
     protocols = await protocol_repo.list_active()
     documents = await document_repo.list_all()
 
@@ -102,7 +105,7 @@ async def handle_admin_health(
     logger.info(
         "Health check by admin {admin}: protocols active={pa} missing={pm}, "
         "documents total={dt} missing={dm}",
-        admin=user_id,
+        admin=admin_id,
         pa=len(protocols),
         pm=len(missing_protocols),
         dt=len(documents),
@@ -147,7 +150,72 @@ async def handle_admin_health(
         if remaining > 0:
             lines.append(get_text(lang, "missing_more").format(n=remaining))
 
-    await message.answer("\n".join(lines))
+    return "\n".join(lines)
+
+
+@router.message(Command("admin_health"))
+async def handle_admin_health(
+    message: Message,
+    user_repo,
+    protocol_repo,
+    document_repo,
+    storage_service,
+) -> None:
+    """Report DB-vs-filesystem drift via /admin_health command.
+
+    Primary admin only.
+    """
+    from bot.core import settings
+
+    user_id = message.from_user.id
+    lang = await user_repo.get_lang(user_id) or "ru"
+
+    if user_id != settings.primary_admin_id:
+        await message.answer(get_text(lang, "no_admin"))
+        return
+
+    report = await _build_health_report(
+        protocol_repo=protocol_repo,
+        document_repo=document_repo,
+        storage_service=storage_service,
+        lang=lang,
+        admin_id=user_id,
+    )
+    await message.answer(report)
+
+
+@router.callback_query(F.data == "admin:health")
+async def handle_admin_health_callback(
+    callback: CallbackQuery,
+    user_repo,
+    protocol_repo,
+    document_repo,
+    storage_service,
+) -> None:
+    """Report DB-vs-filesystem drift via the /admin menu button.
+
+    Primary admin only. Acknowledges the callback to clear the
+    Telegram spinner before computing the report.
+    """
+    from bot.core import settings
+
+    user_id = callback.from_user.id
+    lang = await user_repo.get_lang(user_id) or "ru"
+
+    if user_id != settings.primary_admin_id:
+        await callback.answer(get_text(lang, "no_admin"), show_alert=True)
+        return
+
+    await callback.answer()
+
+    report = await _build_health_report(
+        protocol_repo=protocol_repo,
+        document_repo=document_repo,
+        storage_service=storage_service,
+        lang=lang,
+        admin_id=user_id,
+    )
+    await callback.message.answer(report)
 
 
 __all__ = ["router"]
