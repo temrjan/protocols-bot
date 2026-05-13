@@ -151,6 +151,7 @@ async def main() -> None:
         admin.upload_document.router,  # Document upload (BEFORE upload!)
         admin.upload.router,  # Protocol upload
         admin.moderators.router,  # Moderator management
+        admin.health.router,  # Storage health-check (/admin_health)
     )
 
     # Register startup/shutdown hooks

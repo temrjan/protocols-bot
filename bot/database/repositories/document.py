@@ -55,6 +55,19 @@ class DocumentRepository(BaseRepository[Document]):
         row = await self._fetch_one(query, (doc_id,))
         return self._row_to_document(row) if row else None
 
+    async def list_all(self) -> list[Document]:
+        """List all documents.
+
+        Used by health-check to cross-reference DB rows against files
+        on disk; needs every row, not a filtered subset.
+
+        Returns:
+            All documents in upload order (newest first).
+        """
+        query = "SELECT * FROM documents ORDER BY uploaded_at DESC"
+        rows = await self._fetch_all(query)
+        return [self._row_to_document(row) for row in rows]
+
     async def update_file_id(self, doc_id: int, file_id: str | None) -> None:
         """Update Telegram file ID for document.
 
