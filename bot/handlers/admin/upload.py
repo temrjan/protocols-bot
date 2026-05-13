@@ -8,7 +8,6 @@ This module contains handlers for protocol file upload workflow:
 - File processing and storage
 """
 
-import asyncio
 import contextlib
 import io
 from datetime import datetime
@@ -534,9 +533,8 @@ async def handle_upload_protocol_no(
             extension=suffix,
         )
 
-        storage_path = await asyncio.to_thread(
-            storage_service.save_bytes, key, payload, resolved_mime
-        )
+        await storage_service.save_bytes(key, payload, resolved_mime)
+        storage_path = storage_service.get_path(key)
         size_bytes = file_size or storage_path.stat().st_size
 
         # Create protocol record
