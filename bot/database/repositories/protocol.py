@@ -227,6 +227,19 @@ class ProtocolRepository(BaseRepository[Protocol]):
         rows = await self._fetch_all(query, (year, pattern))
         return [self._row_to_protocol(row) for row in rows]
 
+    async def list_active(self) -> list[Protocol]:
+        """List all active protocols.
+
+        Used by health-check to cross-reference DB rows against files
+        on disk; needs every active row, not a filtered subset.
+
+        Returns:
+            All active protocols in upload order (newest first).
+        """
+        query = "SELECT * FROM protocols WHERE is_active = 1 ORDER BY uploaded_at DESC"
+        rows = await self._fetch_all(query)
+        return [self._row_to_protocol(row) for row in rows]
+
     async def get_by_id(self, protocol_id: int) -> Protocol | None:
         """Get protocol by ID.
 
